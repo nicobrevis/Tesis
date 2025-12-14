@@ -7,6 +7,7 @@
 Herramientas de ingeniería inversa y procesamiento de datos para habilitar la **Optimización Robusta** en Terapia de Protones de Intensidad Modulada (IMPT) utilizando [OpenTPS](https://opentps.org/).
 
 Este proyecto resuelve la limitación de la "Caja Negra" de OpenTPS, permitiendo la extracción de la **Matriz de Deposición de Dosis (DDM)** directamente desde la memoria, filtrándola por regiones de interés (ROI) y preparándola para solvers de optimización externos.
+Los archivos del paciente se encuentran en https://www.mediafire.com/file/ho5pmana3ax99ra/Script.rar/file
 
 ---
 
