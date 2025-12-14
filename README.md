@@ -1,19 +1,52 @@
-OpenTPS DDM Exporter & ProcessorEste repositorio contiene herramientas y guías para extraer, filtrar y procesar la Matriz de Deposición de Dosis (DDM) desde el software de planificación de radioterapia OpenTPS.El objetivo principal es habilitar la Optimización Robusta externa permitiendo el acceso a la matriz de influencia $D$, la cual no es exportable nativamente desde la interfaz gráfica de OpenTPS.📋 CaracterísticasExtracción Automática: Modificación del código fuente de OpenTPS para interceptar la DDM desde la memoria RAM.Filtrado Espacial (ROI): Script para reducir la dimensionalidad de la matriz, conservando solo los vóxeles correspondientes a una Región de Interés (ej. GTV-1, Tumor), reduciendo el tamaño de datos en un ~99%.Manejo de Escenarios Robustos: Detección automática y extracción del escenario nominal en simulaciones que incluyen incertidumbre.Conversión a Formatos Estándar: Exportación a .txt y .npz separando por ángulos de incidencia (Haces/Beams).⚙️ RequisitosPython 3.8+Entorno virtual con OpenTPS instalado.Librerías adicionales: numpy, scipy, pandas.🚀 Paso 1: Modificación del Código Fuente (El "Hack")Para poder extraer la matriz, es necesario inyectar un pequeño bloque de código en el motor de cálculo de OpenTPS.Localiza el archivo mcsquareDoseCalculator.py. Usualmente se encuentra en:.../site-packages/opentps/core/processing/doseCalculation/mcsquareDoseCalculator.pyBusca la función computeBeamlets.Al final de la función, justo antes del return beamletDose, inserta el siguiente código:Python    # --- INICIO MODIFICACIÓN: EXTRACCIÓN DDM ---
+# ⚛️ OpenTPS DDM Exporter & Processor
+
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![OpenTPS](https://img.shields.io/badge/Software-OpenTPS-green)
+![Status](https://img.shields.io/badge/Status-Research-orange)
+
+Este repositorio contiene el conjunto de herramientas desarrolladas para **extraer, procesar y optimizar** la Matriz de Deposición de Dosis (DDM) desde el software de planificación de radioterapia [OpenTPS](https://opentps.org/).
+
+El objetivo principal de este proyecto es habilitar la investigación en **Optimización Robusta** permitiendo la exportación de la matriz de influencia $D$, una funcionalidad no disponible nativamente en la interfaz gráfica del software.
+
+---
+
+## 🚀 Funcionalidades Principales
+
+* **🔓 Extracción de Caja Negra:** Modificación del código fuente ("Hook") para interceptar la DDM desde la memoria RAM antes de su eliminación.
+* **🎯 Filtrado Espacial Inteligente:** Algoritmo que utiliza máscaras binarias basadas en contornos DICOM para extraer solo los vóxeles del tumor (GTV), reduciendo el tamaño de los datos en un **~99%**.
+* **🛡️ Detección de Escenarios Robustos:** El script detecta automáticamente si la simulación incluye múltiples escenarios de incertidumbre y extrae quirúrgicamente el escenario nominal.
+* **scikit-sparse & NumPy:** Conversión eficiente a formatos `.npz` y `.txt` separados por ángulos de incidencia.
+
+---
+
+## 🛠️ Instalación y Configuración
+
+### Prerrequisitos
+* Entorno conda con **OpenTPS** instalado.
+* Librerías Python: `numpy`, `scipy`, `pydicom`.
+
+### Paso 1: Intervención del Código Fuente (El "Hook")
+Para exportar la matriz, se debe inyectar un fragmento de código en el motor de cálculo de OpenTPS.
+
+1.  Navega a la ruta de instalación de la librería OpenTPS:
+    `.../site-packages/opentps/core/processing/doseCalculation/mcsquareDoseCalculator.py`
+2.  Localiza la función: `def computeBeamlets(...)`
+3.  Inserta el siguiente código al final de la función, justo **antes** del `return`:
+
+```python
+    # --- INICIO MODIFICACIÓN: EXTRACCIÓN AUTOMÁTICA ---
     try:
         from opentps.core.io.serializedObjectIO import saveBeamlets
         import logging
         logger = logging.getLogger(__name__)
-        
-        # Ruta donde quieres que aparezca el archivo. CAMBIA ESTA RUTA.
-        ruta_guardado = 'C:/Script/ddm_exportada_auto.blm' 
-        
-        saveBeamlets(beamletDose, ruta_guardado)
-        logger.info(f"DDM interceptada y guardada en: {ruta_guardado}")
+
+        # CAMBIAR ESTA RUTA A TU CARPETA DE TRABAJO
+        ruta_exportacion = 'C:/Script/ddm_exportada_auto.blm'
+
+        saveBeamlets(beamletDose, ruta_exportacion)
+        logger.info(f"DDM interceptada y guardada en: {ruta_exportacion}")
     except Exception as e:
-        logger.error(f"Error exportando DDM: {e}")
+        logger.error(f"Error crítico exportando DDM: {e}")
     # --- FIN MODIFICACIÓN ---
 
-    return beamletDose # Esta línea ya existe, no la borres.
-🛠️ Paso 2: Generación de la MatrizAbre OpenTPS.Carga tu paciente (CT) y configura tu Plan de Tratamiento (Haces, ángulos, etc.).Haz clic en "Compute Dose".Al finalizar, aparecerá automáticamente el archivo ddm_exportada_auto.blm en la carpeta que configuraste.💻 Paso 3: Filtrado y Conversión (Scripts)Este repositorio incluye dos scripts principales para procesar el archivo .blm crudo.1. Extracción y Filtrado (extract_roi.py)Este script carga la DDM completa y la imagen CT. Utiliza los contornos DICOM para crear una máscara binaria y extraer solo las filas correspondientes al tumor (GTV), reduciendo drásticamente el tamaño del archivo.Características:Alinea la geometría CT con la DDM.Detecta si la DDM contiene escenarios de robustez apilados y extrae solo el escenario nominal.2. Conversión a Texto por Ángulos (convert_to_txt.py)Convierte el archivo .npz filtrado a archivos de texto plano (.txt) separando los beamlets por ángulo de disparo, listo para ser usado en optimizadores como CVXPY o MATLAB.Configuración Importante:Debes editar la variable limite_beam_1 con el número de Scanning Spots del primer haz (dato visible en la pestaña "Plan Design" de OpenTPS).Python# Ejemplo
-limite_beam_1 = 4250 # Poner aquí el número de spots del Beam 1
-📦 Estructura de Datos ResultanteEl flujo de trabajo genera los siguientes archivos:ArchivoDescripciónFormatoddm_exportada_auto.blmMatriz cruda completa (Todo el cuerpo).Binario OpenTPSddm_GTV-1.npzMatriz dispersa filtrada (Solo Tumor).Python Sparseddm_GTV-1_Angulo1.txtDatos del Haz 1 (columnas: voxel, beamlet, intensidad).CSV/TXTddm_GTV-1_Angulo2.txtDatos del Haz 2.CSV/TXT⚠️ Solución de Problemas ComunesError: "Dimensions mismatch / La máscara no coincide"Si el script dice que la DDM es 2 veces más grande que la máscara, significa que OpenTPS calculó escenarios de incertidumbre. El script extract_roi.py incluido en este repo soluciona esto automáticamente cortando la matriz para obtener el escenario nominal.
+    return beamletDose  # Código original
