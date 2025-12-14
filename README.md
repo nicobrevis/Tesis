@@ -1,10 +1,4 @@
-Aquí tienes una propuesta completa y profesional para tu archivo `README.md`. Está redactada en **Markdown**, lista para copiar y pegar en GitHub.
 
-He estructurado el documento para que refleje fielmente el flujo de trabajo de tu tesis (Ingeniería Inversa \to Filtrado \to Formato), destacando la complejidad técnica del proyecto.
-
----
-
-```markdown
 # OpenTPS DDM Extractor & Processor for IMPT Research
 
 Este repositorio contiene las herramientas y scripts desarrollados para la extracción, filtrado y procesamiento de la **Matriz de Deposición de Dosis (DDM)** desde el sistema de planificación **OpenTPS**.
@@ -122,13 +116,3 @@ python src/export_txt.py --input data/processed/ddm_GTV-1.npz
 
 * *OpenTPS: An open-source treatment planning system for research in proton therapy.*
 
-```
-
-### Cómo usar esto:
-1.  Crea un archivo llamado `README.md` en la carpeta principal de tu proyecto.
-2.  Copia y pega el código de arriba.
-3.  Si subes esto a GitHub, se renderizará automáticamente con los títulos en negrita, los bloques de código formateados y la tabla organizada.
-
-¡Esto le dará un aspecto muy profesional a tu tesis y repositorio!
-
-```
